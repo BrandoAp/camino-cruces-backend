@@ -28,7 +28,6 @@ SECRET_KEY = config('SECRET_KEY')  # Lee la clave desde .env
 DEBUG = config('DEBUG', default=False, cast=bool)  # Lee DEBUG desde .env
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
-ALLOWED_HOST = os.envieron.get("ALLOWED_HOST", "*").split(",")
 
 
 # Application definition
