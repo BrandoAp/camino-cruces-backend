@@ -1,6 +1,6 @@
 from ..models import Comentario
 from ..serializers import ComentarioSerializer
-from django.db.models import Avg
+
 
 def crear_comentario(data):
     serializer = ComentarioSerializer(data=data)

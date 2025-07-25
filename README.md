@@ -59,7 +59,12 @@ proyecto-api/
 | Sección | Descripción | Enlace |
 |---------|-------------|--------|
 | 📊 **Dashboard API** | Endpoints para estadísticas y reportes | [📄 Dashboard](docs/dashboard.md) |
-
+| 📊 **Registro-Visita API** | Endpoints para visitantes y registro de visitantes | [📄 RegistroVisitante](docs/registro_visita.md) |
+| 👤 **Usuarios API** | Endpoints para Registro, autenticación y consulta de usuarios | [📄 Usuarios](docs/usuarios.md) |
+| 🏞️ **Senderos API** | Endpoints para Información de senderos | [📄 Senderos](docs/senderos.md) |
+| 📋 **Encuestas API** | Endpoints para Registro de encuestas asociadas a visitas | [📄 Encuestas](docs/encuestas.md) |
+| 📝 **Comentarios API** | Endpoints para Agregar y listar comentarios (por sendero) | [📄 Comentarios](docs/comentarios.md) |
+| ⭐ **Valoraciones API** | Endpoints para Obtener valoraciones promedio de un sendero | [📄 Valoraciones](docs/valoraciones.md) |
 
 ---
 ## 🌐 API Endpoints
@@ -73,6 +78,47 @@ GET /api/dashboard/visitantes-por-pais/   # Estadísticas geográficas
 GET /api/dashboard/visitantes-por-sendero/ # Popularidad de rutas
 ```
 
+### 📊 Registro-Visitante (Registrar visitas y Obtener visita mediante cedula)
+```
+POST /api/registrar_visitante_y_visita/   # Registra un visitante nuevo junto a su primera visita
+POST /api/registrar-visita/               # Registra una visita de un visitante existente
+POST /api/registrar-visita-id/            # Registra una visita por ID de visitante
+GET  /api/visitante/cedula/<cedula>/      # Consulta un visitante por su cédula/pasaporte
+```
+
+
+### 👤 Usuarios
+
+```
+POST /api/registro/            # Registrar un nuevo usuario
+GET  /api/usuario/<id>/        # Obtener usuario por ID
+POST /api/login/               # Autenticación y generación de token JWT
+```
+
+### 🏞️ Senderos
+
+```
+GET /api/sendero/<id>/         # Obtener información de un sendero por ID
+GET /api/senderos/             # Listar todos los senderos registrados
+```
+
+### 📋 Encuestas
+
+```
+POST /api/encuestas/registrar/  # Registrar una encuesta asociada a una visita
+```
+
+### 📝 Comentarios
+```
+POST /api/comentarios/agregar/                         # Agrega un comentario a un sendero (con o sin imagen)
+GET  /api/comentarios/sendero/<sendero_id>/            # Lista todos los comentarios de un sendero
+```
+
+### ⭐ Valoraciones
+```
+GET  /api/valoracion-promedio/<sendero_id>/            # Obtiene la valoración promedio de un sendero
+GET  /api/comentarios/<sendero_id>/valoraciones/       # Obtiene la distribución de valoraciones (1 a 5 estrellas) de un sendero
+```
 ---
 **Última actualización:** Julio 2025  
 **Versión:** 1.0.

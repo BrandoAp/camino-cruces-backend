@@ -11,7 +11,7 @@ from .views import (
     comentarios_por_sendero,
     valoracion_promedio,
     valoraciones_por_sendero,
-    registrar_encuesta_view
+    registrar_encuesta_view, 
 )
 from api import views
 
@@ -46,6 +46,7 @@ urlpatterns = [
     path('visitante/cedula/<str:cedula>/', obtener_visitante_por_cedula, name='visitante-por-cedula'),
 
     # Registro de visita
+    path('registrar_visitante_y_visita/', views.registrar_visitante_y_visita, name='registrar-visita-y-visitas'),
     path('registro-visita/', registrar_visita, name='registro-visita'),
     path('registrar-visita-id/', views.registrar_visita_por_id, name='registrar-visita-id'),
 
