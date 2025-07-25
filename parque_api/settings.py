@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'parque_api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  # Cambia a MySQL
+        'ENGINE': 'mysql.connector.django',  # Cambia a MySQL
         'NAME': config('DB_NAME'),
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
