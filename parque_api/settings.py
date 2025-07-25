@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')  # Lee la clave desde .env
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)  # Lee DEBUG desde .env
 
-ALLOWED_HOSTS = ['.railway.app']
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 
 # Application definition
