@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')  # Lee la clave desde .env
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)  # Lee DEBUG desde .env
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default=[], cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='.up.railway.app,localhost,127.0.0.1', cast=Csv())
 
 
 # Application definition
