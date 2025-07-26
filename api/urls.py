@@ -12,6 +12,7 @@ from .views import (
     valoracion_promedio,
     valoraciones_por_sendero,
     registrar_encuesta_view, 
+    reporte_excel,
 )
 from api import views
 
@@ -56,6 +57,8 @@ urlpatterns = [
     path('dashboard/encuestas-hoy/', encuestas_hoy, name='encuestas-hoy'),
     path('dashboard/visitantes-por-pais/', visitantes_por_pais, name='visitantes-por-pais'),
     path('dashboard/visitantes-por-sendero/', visitantes_por_sendero, name='visitantes-por-sendero'),
+        # URL para el reporte Excel
+   path('reporte-excel/', reporte_excel, name='reporte-excel'),
 
     # Encuesta
     path('encuestas/registrar/', registrar_encuesta_view),

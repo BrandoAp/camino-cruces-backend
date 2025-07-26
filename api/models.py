@@ -91,6 +91,7 @@ class RegistroVisita(models.Model):
 class Encuesta(models.Model):
     visita = models.ForeignKey(RegistroVisita, on_delete=models.CASCADE)
     formulario = models.JSONField()
+    fecha_visita = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Encuesta para visita {self.visita.id}"

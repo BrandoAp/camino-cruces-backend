@@ -3,6 +3,9 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from datetime import datetime
+from django.http import HttpResponse
+from .services.reporte_excel import generar_reporte_completo
 
 from .models import Visitante, RegistroVisita, Sendero
 from .serializers import (UsuarioSerializer, SenderoSerializer, SenderoFotoSerializer, VisitanteSerializer, ComentarioSerializer)
@@ -309,3 +312,34 @@ def visitantes_por_sendero(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['GET'])
+def reporte_excel(request):
+    """
+    Genera y descarga el reporte completo en Excel.
+    """
+    try:
+        # Generar el reporte
+        excel_file = generar_reporte_completo()
+        
+        # Crear nombre del archivo con fecha y hora
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"reporte_completo_centro_visitantes_{timestamp}.xlsx"
+        
+        # Crear respuesta HTTP para descarga
+        response = HttpResponse(
+            excel_file,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        # En caso de error, devolver JSON con el error
+        return Response(
+            {
+                "error": "Error al generar el reporte completo",
+                "detalle": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

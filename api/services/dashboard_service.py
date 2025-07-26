@@ -68,8 +68,25 @@ def contar_encuestas_hoy():
     Cuenta el número de encuestas llenadas hoy.
     Retorna: número entero
     """
+    from django.utils import timezone
+    from datetime import date, datetime, timedelta
+    
     hoy = date.today()
-    count = Encuesta.objects.filter(visita__fecha_visita__date=hoy).count()
+    
+    # Crear el rango de fechas para todo el día
+    inicio_dia = timezone.make_aware(
+        datetime.combine(hoy, datetime.min.time())
+    )
+    fin_dia = timezone.make_aware(
+        datetime.combine(hoy, datetime.max.time())
+    )
+    
+    queryset = Encuesta.objects.filter(
+        fecha_visita__gte=inicio_dia,
+        fecha_visita__lt=fin_dia + timedelta(days=1)
+    )
+    
+    count = queryset.count()
     return count
 
 
