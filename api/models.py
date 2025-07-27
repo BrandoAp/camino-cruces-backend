@@ -2,6 +2,26 @@ from django.db import models
 from cryptography.fernet import Fernet
 from decouple import config
 
+from django.utils import timezone
+import pytz
+
+# ==============================
+# Guarda con Horario Local
+# ==============================
+def obtener_fecha_panama():
+    """
+    Retorna la fecha y hora actual en zona horaria de Panamá.
+    """
+    tz_panama = pytz.timezone('America/Panama')
+    return timezone.now().astimezone(tz_panama)
+
+def obtener_hora_panama():
+    """
+    Retorna solo la hora actual en zona horaria de Panamá.
+    """
+    tz_panama = pytz.timezone('America/Panama')
+    return timezone.now().astimezone(tz_panama).time()
+
 
 # ==============================
 # Clave de encriptación desde .env
@@ -81,8 +101,8 @@ class RegistroVisita(models.Model):
     visitante = models.ForeignKey(Visitante, on_delete=models.CASCADE)
     razon_visita = models.TextField()
     sendero_visitado = models.TextField()
-    fecha_visita = models.DateTimeField(auto_now_add=True)
-    hora_entrada = models.TimeField(auto_now_add=True)  # Nueva columna añadida
+    fecha_visita = models.DateTimeField(default=obtener_fecha_panama)
+    hora_entrada = models.TimeField(default=obtener_hora_panama)  # ✅ Corregido
 
     def __str__(self):
         return f"Visita de {self.visitante.nombre_visitante} a {self.sendero_visitado}"
@@ -91,7 +111,7 @@ class RegistroVisita(models.Model):
 class Encuesta(models.Model):
     visita = models.ForeignKey(RegistroVisita, on_delete=models.CASCADE)
     formulario = models.JSONField()
-    fecha_visita = models.DateTimeField(auto_now_add=True)
+    fecha_visita = models.DateTimeField(default=obtener_fecha_panama)
 
     def __str__(self):
         return f"Encuesta para visita {self.visita.id}"
