@@ -117,7 +117,7 @@ class Usuario(models.Model):
 class Comentario(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     sendero = models.ForeignKey(Sendero, on_delete=models.CASCADE)
-    foto_comentario = models.ImageField(upload_to='comentarios/', blank=True, null=True)
+    foto_comentario = models.URLField(blank=True, null=True)
     comentario = models.TextField()
     valoracion = models.PositiveSmallIntegerField()
 

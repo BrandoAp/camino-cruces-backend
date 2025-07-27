@@ -35,7 +35,7 @@ Registra un nuevo visitante junto con su primera visita al parque. Los datos sen
 
 ### 2. Registrar Visita para Visitante Existente
 
-**POST** `/api/registrar-visita/`
+**POST** `api/registro-visita/`
 
 Registra una nueva visita para un visitante previamente registrado en el sistema.
 
