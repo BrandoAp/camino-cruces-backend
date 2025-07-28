@@ -63,7 +63,8 @@ class ComentarioSerializer(serializers.ModelSerializer):
     )
     usuario = serializers.StringRelatedField(read_only=True)  # Mostrar el usuario como string
     sendero = serializers.PrimaryKeyRelatedField(queryset=Sendero.objects.all())
-    foto_comentario = serializers.ImageField(required=False, allow_null=True)
+    foto_comentario = serializers.URLField(required=False, allow_null=True)
+
 
     class Meta:
         model = Comentario
