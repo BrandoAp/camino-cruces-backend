@@ -1,3 +1,4 @@
+
 # Dashboard - Parque Nacional Camino de Cruces
 
 ## 📊 Endpoints del Dashboard
@@ -239,7 +240,55 @@ Retorna estadísticas de visitantes agrupados por sendero visitado, ordenados po
   "detalle": "Descripción técnica del error"
 }
 ```
+### 6. Reporte Completo en Excel
 
+**GET** `/reporte-excel/`
+
+Genera y descarga un archivo Excel con información detallada del sistema, incluyendo visitantes, visitas, senderos, encuestas y estadísticas relevantes.
+
+#### Descripción
+
+Este endpoint genera un **reporte completo en formato `.xlsx`** estructurado en múltiples hojas, útil para análisis administrativos, presentaciones o respaldo de datos.
+
+#### Hojas del Reporte
+
+| Hoja | Título                | Contenido                                                            |
+| ---- | --------------------- | -------------------------------------------------------------------- |
+| 1    | Resumen Ejecutivo     | Métricas clave del sistema (visitantes, visitas, encuestas, etc.)    |
+| 2    | Visitantes            | Detalles individuales de cada visitante, incluyendo total de visitas |
+| 3    | Registro de Visitas   | Historial completo de visitas con fecha, hora y sendero visitado     |
+| 4    | Senderos              | Información de senderos, dificultad, visitas y valoración            |
+| 5    | Encuestas             | Resumen de encuestas completadas con respuestas truncadas            |
+| 6    | Estadísticas por País | Agrupación de visitantes y visitas por nacionalidad                  |
+| 7    | Usuarios del Sistema  | Listado de usuarios con información de roles y comentarios           |
+
+#### Parámetros
+
+No requiere parámetros.
+
+#### Respuesta Exitosa (200 OK)
+
+* **Tipo de contenido:** `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+* **Encabezado:**
+  `Content-Disposition: attachment; filename="reporte_completo_centro_visitantes_YYYYMMDD_HHMMSS.xlsx"`
+
+> Se descarga automáticamente un archivo Excel con las hojas detalladas anteriormente.
+
+#### Respuesta de Error (500)
+
+```json
+{
+  "error": "Error al generar el reporte completo",
+  "detalle": "Descripción técnica del error"
+}
+```
+
+#### Características Técnicas
+
+* Los datos sensibles son desencriptados automáticamente antes de exportarse.
+* El archivo se genera en tiempo real, sin almacenarse en disco.
+* Las hojas tienen encabezados estilizados y celdas con bordes para una mejor visualización.
+* El nombre del archivo incluye la fecha y hora de generación.
 ---
 
 ## 🔧 Códigos de Estado HTTP
@@ -324,4 +373,4 @@ Accept: application/json
 ---
 
 **Última actualización:** Julio 2025  
-**Versión:** 1.0
+**Versión:** 2.0

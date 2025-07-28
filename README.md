@@ -3,14 +3,13 @@
 [![Django](https://img.shields.io/badge/Django-4.2+-green.svg)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![API](https://img.shields.io/badge/API-REST-orange.svg)](https://restframework.djangorest.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📋 Descripción del Proyecto
 
 Sistema web integral para la gestión de visitantes, senderos y análisis estadístico del Parque Nacional Camino de Cruces. Incluye funcionalidades de registro de visitantes, encuestas de satisfacción, dashboard administrativo y gestión de senderos con sus respectivas fotografías.
 ## Información General
 
-**Base URL:** `http://localhost:8000/api/dashboard/`  
+**Base URL:** `https://camino-cruces-backend-production.up.railway.app/`  
 **Formato de respuesta:** JSON  
 **Método de autenticación:** Pendiente de implementar
 
@@ -31,6 +30,7 @@ proyecto-api/
 │   │   ├── 📄 sendero_service.py     # Lógica de senderos
 │   │   ├── 📄 usuario_service.py     # Gestión de usuarios
 │   │   └── 📄 valoracion_service.py  # Sistema de valoraciones
+│   │   └── 📄 reporte_excel.py       # Reporte completo en archivo Excel
 │   ├── 📄 __init__.py
 │   ├── 📄 admin.py                  # Configuración admin Django
 │   ├── 📄 apps.py                   # Configuración de la app
@@ -71,41 +71,42 @@ proyecto-api/
 
 ### 📊 Dashboard (Estadísticas)
 ```
-GET /api/dashboard/visitas-recientes/     # Últimas visitas
-GET /api/dashboard/visitantes-hoy/        # Conteo diario
-GET /api/dashboard/encuestas-hoy/         # Encuestas completadas
-GET /api/dashboard/visitantes-por-pais/   # Estadísticas geográficas
-GET /api/dashboard/visitantes-por-sendero/ # Popularidad de rutas
+GET /api/dashboard/visitas-recientes/                # Últimas visitas
+GET /api/dashboard/visitantes-hoy/                   # Conteo diario
+GET /api/dashboard/encuestas-hoy/                    # Encuestas completadas
+GET /api/dashboard/visitantes-por-pais/              # Estadísticas geográficas
+GET /api/dashboard/visitantes-por-sendero/           # Popularidad de rutas
+GET /api/reporte-excel/                    # Genera y descarga el reporte Excel completo
 ```
 
 ### 📊 Registro-Visitante (Registrar visitas y Obtener visita mediante cedula)
 ```
-POST /api/registrar_visitante_y_visita/   # Registra un visitante nuevo junto a su primera visita
-POST api/registro-visita/               # Registra una visita de un visitante existente
-POST /api/registrar-visita-id/            # Registra una visita por ID de visitante
-GET  /api/visitante/cedula/<cedula>/      # Consulta un visitante por su cédula/pasaporte
+POST /api/registrar_visitante_y_visita/              # Registra un visitante nuevo junto a su primera visita
+POST api/registro-visita/                            # Registra una visita de un visitante existente
+POST /api/registrar-visita-id/                       # Registra una visita por ID de visitante
+GET  /api/visitante/cedula/<cedula>/                 # Consulta un visitante por su cédula/pasaporte
 ```
 
 
 ### 👤 Usuarios
 
 ```
-POST /api/registro/            # Registrar un nuevo usuario
-GET  /api/usuario/<id>/        # Obtener usuario por ID
-POST /api/login/               # Autenticación y generación de token JWT
+POST /api/registro/                                 # Registrar un nuevo usuario
+GET  /api/usuario/<id>/                             # Obtener usuario por ID
+POST /api/login/                                    # Autenticación y generación de token JWT
 ```
 
 ### 🏞️ Senderos
 
 ```
-GET /api/sendero/<id>/         # Obtener información de un sendero por ID
-GET /api/senderos/             # Listar todos los senderos registrados
+GET /api/sendero/<id>/                             # Obtener información de un sendero por ID
+GET /api/senderos/                                 # Listar todos los senderos registrados
 ```
 
 ### 📋 Encuestas
 
 ```
-POST /api/encuestas/registrar/  # Registrar una encuesta asociada a una visita
+POST /api/encuestas/registrar/                     # Registrar una encuesta asociada a una visita
 ```
 
 ### 📝 Comentarios

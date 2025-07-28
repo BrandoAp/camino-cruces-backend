@@ -181,10 +181,17 @@ def generar_reporte_completo():
         formulario_texto = str(encuesta.formulario)
         if len(formulario_texto) > 100:
             formulario_texto = formulario_texto[:100] + '...'
-        
+
+        # Asegurar compatibilidad con datetime o date
+        fecha_raw = encuesta.fecha_visita
+        if isinstance(fecha_raw, datetime):
+            fecha_formateada = fecha_raw.strftime("%d/%m/%Y %H:%M")
+        else:
+            fecha_formateada = datetime.combine(fecha_raw, time.min).strftime("%d/%m/%Y %H:%M")
+
         ws_encuestas.append([
             encuesta.id,
-            encuesta.fecha_visita.strftime("%d/%m/%Y %H:%M"),
+            fecha_formateada,
             encuesta.visita.visitante.nombre_visitante or 'N/A',
             encuesta.visita.sendero_visitado or 'N/A',
             formulario_texto
