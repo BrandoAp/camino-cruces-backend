@@ -1,7 +1,7 @@
 from django.db import models
 from cryptography.fernet import Fernet
 from decouple import config
-
+from datetime import timedelta
 from django.utils import timezone
 import pytz
 
