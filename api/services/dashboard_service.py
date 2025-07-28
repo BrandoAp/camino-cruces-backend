@@ -96,48 +96,59 @@ def obtener_visitas_recientes():
     return visitas_data
 
 
-def contar_visitantes_hoy():
-    """
-    Cuenta el número de visitantes que han llegado HOY en zona horaria de Panamá.
-    Retorna: número entero
-    """
-    inicio_dia_utc, fin_dia_utc = obtener_rango_dia_panama()
-    
-    # Debug: Imprimir rangos para verificar
-    tz_panama = obtener_timezone_panama()
-    print(f"[DEBUG] Contando visitantes para el día: {obtener_fecha_actual_panama()}")
-    print(f"[DEBUG] Rango UTC: {inicio_dia_utc} - {fin_dia_utc}")
-    print(f"[DEBUG] Rango Panamá: {inicio_dia_utc.astimezone(tz_panama)} - {fin_dia_utc.astimezone(tz_panama)}")
-    
-    count = RegistroVisita.objects.filter(
-        fecha_visita__gte=inicio_dia_utc,
-        fecha_visita__lte=fin_dia_utc
-    ).count()
-    
-    print(f"[DEBUG] Visitantes encontrados: {count}")
-    return count
-
-
 def contar_encuestas_hoy():
     """
     Cuenta el número de encuestas llenadas HOY en zona horaria de Panamá.
-    Retorna: número entero
     """
-    inicio_dia_utc, fin_dia_utc = obtener_rango_dia_panama()
-    
-    # Debug: Imprimir rangos para verificar
-    tz_panama = obtener_timezone_panama()
-    print(f"[DEBUG] Contando encuestas para el día: {obtener_fecha_actual_panama()}")
-    print(f"[DEBUG] Rango UTC: {inicio_dia_utc} - {fin_dia_utc}")
-    print(f"[DEBUG] Rango Panamá: {inicio_dia_utc.astimezone(tz_panama)} - {fin_dia_utc.astimezone(tz_panama)}")
-    
-    count = Encuesta.objects.filter(
-        fecha_visita__gte=inicio_dia_utc,
-        fecha_visita__lte=fin_dia_utc
-    ).count()
-    
-    print(f"[DEBUG] Encuestas encontradas: {count}")
-    return count
+    from django.utils import timezone as django_tz
+    tz_panama = pytz.timezone('America/Panama')
+
+    # Activar la zona horaria de Panamá para esta consulta
+    django_tz.activate(tz_panama)
+
+    try:
+        # Usar __date para filtrar solo por fecha (ignora las horas)
+        hoy = django_tz.now().date()
+        count = Encuesta.objects.filter(fecha_visita__date=hoy).count()
+
+        print(f"[DEBUG] Contando encuestas para el día: {hoy}")
+        print(f"[DEBUG] Zona horaria activa: America/Panama")
+        print(f"[DEBUG] Encuestas encontradas: {count}")
+
+        # Debug adicional: mostrar las fechas de las encuestas encontradas
+        encuestas = Encuesta.objects.filter(fecha_visita__date=hoy)
+        for encuesta in encuestas:
+            fecha_panama = encuesta.fecha_visita.astimezone(tz_panama)
+            print(f"[DEBUG] Encuesta {encuesta.id}: {fecha_panama}")
+
+        return count
+    finally:
+        # Desactivar la zona horaria específica
+        django_tz.deactivate()
+
+def contar_visitantes_hoy():
+    """
+    Cuenta el número de visitantes que han llegado HOY en zona horaria de Panamá.
+    También actualizada para consistencia.
+    """
+    from django.utils import timezone as django_tz
+    tz_panama = pytz.timezone('America/Panama')
+
+    # Activar la zona horaria de Panamá para esta consulta
+    django_tz.activate(tz_panama)
+
+    try:
+        # Usar __date para filtrar solo por fecha
+        hoy = django_tz.now().date()
+        count = RegistroVisita.objects.filter(fecha_visita__date=hoy).count()
+
+        print(f"[DEBUG] Contando visitantes para el día: {hoy}")
+        print(f"[DEBUG] Visitantes encontrados: {count}")
+
+        return count
+    finally:
+        # Desactivar la zona horaria específica
+        django_tz.deactivate()
 
 
 def obtener_visitantes_por_pais():
