@@ -4,270 +4,274 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
 from datetime import datetime, time, date
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Prefetch
+from django.db import connection
 from ..models import (
     Visitante, Sendero, RegistroVisita, 
     Encuesta, Usuario, Comentario
 )
+import gc
 
 
 def generar_reporte_completo():
-    """Genera UN SOLO reporte completo con todas las hojas necesarias."""
+    """Genera UN SOLO reporte completo con todas las hojas necesarias - OPTIMIZADO."""
     
-    wb = openpyxl.Workbook()
-    
-    # Estilos reutilizables
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    header_font = Font(color="FFFFFF", bold=True, size=12)
-    border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
-    center_alignment = Alignment(horizontal='center', vertical='center')
+    try:
+        # Configurar límites para evitar problemas de memoria
+        MAX_ROWS_PER_SHEET = 10000
+        
+        wb = openpyxl.Workbook()
+        
+        # Estilos reutilizables (más simples para reducir memoria)
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_font = Font(color="FFFFFF", bold=True)
+        
+        def aplicar_estilos_header_simple(ws, headers):
+            """Aplica estilos simples a los headers."""
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.value = header
+                # Ajustar ancho de columna de forma más eficiente
+                ws.column_dimensions[get_column_letter(col_num)].width = min(max(len(str(header)) + 2, 12), 30)
 
-    def aplicar_estilos_header(ws, headers):
-        """Aplica estilos a los headers."""
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col_num)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = center_alignment
-            cell.border = border
-            ws.column_dimensions[get_column_letter(col_num)].width = max(len(str(header)) + 3, 15)
+        def formatear_fecha(fecha_obj):
+            """Formatea fecha de manera segura y eficiente."""
+            if not fecha_obj:
+                return 'N/A'
+            try:
+                if isinstance(fecha_obj, datetime):
+                    return fecha_obj.strftime("%d/%m/%Y")
+                elif isinstance(fecha_obj, date):
+                    return fecha_obj.strftime("%d/%m/%Y")
+                else:
+                    return str(fecha_obj)
+            except:
+                return 'N/A'
 
-    def aplicar_bordes(ws, max_row, max_col):
-        """Aplica bordes a todas las celdas."""
-        for row in range(1, max_row + 1):
-            for col in range(1, max_col + 1):
-                ws.cell(row=row, column=col).border = border
+        def formatear_fecha_hora(fecha_obj):
+            """Formatea fecha con hora de manera segura y eficiente."""
+            if not fecha_obj:
+                return 'N/A'
+            try:
+                if isinstance(fecha_obj, datetime):
+                    return fecha_obj.strftime("%d/%m/%Y %H:%M")
+                elif isinstance(fecha_obj, date):
+                    return fecha_obj.strftime("%d/%m/%Y")
+                else:
+                    return str(fecha_obj)
+            except:
+                return 'N/A'
 
-    def formatear_fecha(fecha_obj):
-        """Formatea fecha de manera segura."""
-        if isinstance(fecha_obj, datetime):
-            return fecha_obj.strftime("%d/%m/%Y")
-        elif isinstance(fecha_obj, date):
-            return fecha_obj.strftime("%d/%m/%Y")
-        else:
-            return 'N/A'
+        # Eliminar hoja por defecto
+        wb.remove(wb.active)
 
-    def formatear_fecha_hora(fecha_obj):
-        """Formatea fecha con hora de manera segura."""
-        if isinstance(fecha_obj, datetime):
-            return fecha_obj.strftime("%d/%m/%Y %H:%M")
-        elif isinstance(fecha_obj, date):
-            return fecha_obj.strftime("%d/%m/%Y")
-        else:
-            return 'N/A'
+        # ===== HOJA 1: RESUMEN EJECUTIVO =====
+        ws_resumen = wb.create_sheet(title="1. Resumen")
+        
+        # Obtener estadísticas con una sola consulta optimizada
+        try:
+            total_visitantes = Visitante.objects.count()
+            total_visitas = RegistroVisita.objects.count()
+            total_senderos = Sendero.objects.count()
+            total_encuestas = Encuesta.objects.count()
+            total_usuarios = Usuario.objects.count()
+            total_comentarios = Comentario.objects.count()
+        except Exception as e:
+            # Si falla la consulta, usar valores por defecto
+            total_visitantes = total_visitas = total_senderos = 0
+            total_encuestas = total_usuarios = total_comentarios = 0
 
-    # Eliminar hoja por defecto
-    wb.remove(wb.active)
-
-    # ===== HOJA 1: RESUMEN EJECUTIVO =====
-    ws_resumen = wb.create_sheet(title="1. Resumen Ejecutivo")
-    
-    # Título
-    ws_resumen.merge_cells('A1:D1')
-    titulo = ws_resumen['A1']
-    titulo.value = "REPORTE COMPLETO - CENTRO DE VISITANTES"
-    titulo.font = Font(size=16, bold=True, color="FFFFFF")
-    titulo.alignment = center_alignment
-    titulo.fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
-    
-    ws_resumen['A3'] = f"Fecha del reporte: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-    ws_resumen['A3'].font = Font(bold=True)
-    
-    # Métricas principales
-    metricas = [
-        ("📊 ESTADÍSTICAS GENERALES", ""),
-        ("Total de Visitantes Registrados", Visitante.objects.count()),
-        ("Total de Visitas Realizadas", RegistroVisita.objects.count()),
-        ("Total de Senderos Disponibles", Sendero.objects.count()),
-        ("Total de Encuestas Completadas", Encuesta.objects.count()),
-        ("Total de Usuarios del Sistema", Usuario.objects.count()),
-        ("Total de Comentarios", Comentario.objects.count()),
-    ]
-    
-    row = 5
-    for metrica, valor in metricas:
-        ws_resumen[f'A{row}'] = metrica
-        if valor != "":
+        # Título simple
+        ws_resumen['A1'] = "REPORTE CENTRO DE VISITANTES"
+        ws_resumen['A1'].font = Font(size=14, bold=True)
+        
+        ws_resumen['A3'] = f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        
+        # Métricas principales (más compacto)
+        metricas = [
+            ("Total Visitantes", total_visitantes),
+            ("Total Visitas", total_visitas),
+            ("Total Senderos", total_senderos),
+            ("Total Encuestas", total_encuestas),
+            ("Total Usuarios", total_usuarios),
+            ("Total Comentarios", total_comentarios),
+        ]
+        
+        row = 5
+        for metrica, valor in metricas:
+            ws_resumen[f'A{row}'] = metrica
             ws_resumen[f'B{row}'] = valor
-        if metrica.startswith("📊"):
-            ws_resumen[f'A{row}'].font = Font(bold=True, size=14)
-        else:
             ws_resumen[f'A{row}'].font = Font(bold=True)
-        row += 1
+            row += 1
 
-    # ===== HOJA 2: VISITANTES =====
-    ws_visitantes = wb.create_sheet(title="2. Visitantes")
-    
-    headers_visitantes = [
-        'ID', 'Nombre Completo', 'Cédula/Pasaporte', 'Nacionalidad', 
-        'Tipo (Adulto/Niño)', 'Género', 'Teléfono', 'Total de Visitas'
-    ]
-    ws_visitantes.append(headers_visitantes)
-    aplicar_estilos_header(ws_visitantes, headers_visitantes)
-    
-    for visitante in Visitante.objects.all():
-        total_visitas = RegistroVisita.objects.filter(visitante=visitante).count()
-        ws_visitantes.append([
-            visitante.id,
-            visitante.nombre_visitante or 'N/A',
-            visitante.cedula_pasaporte or 'N/A',
-            visitante.nacionalidad or 'N/A',
-            visitante.adulto_nino or 'N/A',
-            visitante.genero or 'N/A',
-            visitante.telefono or 'N/A',
-            total_visitas
-        ])
-    
-    aplicar_bordes(ws_visitantes, ws_visitantes.max_row, len(headers_visitantes))
-
-    # ===== HOJA 3: REGISTRO DE VISITAS =====
-    ws_visitas = wb.create_sheet(title="3. Registro de Visitas")
-    
-    headers_visitas = [
-        'ID Visita', 'Fecha', 'Hora Entrada', 'Nombre Visitante', 
-        'Nacionalidad', 'Sendero Visitado', 'Razón de la Visita', 'Tipo Visitante'
-    ]
-    ws_visitas.append(headers_visitas)
-    aplicar_estilos_header(ws_visitas, headers_visitas)
-    
-    for visita in RegistroVisita.objects.select_related('visitante').order_by('-fecha_visita'):
-        fecha_formateada = formatear_fecha(visita.fecha_visita)
-
-        ws_visitas.append([
-            visita.id,
-            fecha_formateada,
-            visita.hora_entrada.strftime("%H:%M") if visita.hora_entrada else 'N/A',
-            visita.visitante.nombre_visitante or 'N/A',
-            visita.visitante.nacionalidad or 'N/A',
-            visita.sendero_visitado or 'N/A',
-            (visita.razon_visita[:50] + '...') if len(visita.razon_visita or '') > 50 else (visita.razon_visita or 'N/A'),
-            visita.visitante.adulto_nino or 'N/A'
-        ])
-
-    
-    aplicar_bordes(ws_visitas, ws_visitas.max_row, len(headers_visitas))
-
-    # ===== HOJA 4: SENDEROS =====
-    ws_senderos = wb.create_sheet(title="4. Senderos")
-    
-    headers_senderos = [
-        'ID', 'Nombre del Sendero', 'Distancia (km)', 'Nivel de Dificultad', 
-        'Total de Visitas', 'Promedio de Valoración', 'Total de Comentarios'
-    ]
-    ws_senderos.append(headers_senderos)
-    aplicar_estilos_header(ws_senderos, headers_senderos)
-    
-    for sendero in Sendero.objects.all():
-        # Contar visitas que mencionen este sendero
-        total_visitas = RegistroVisita.objects.filter(
-            sendero_visitado__icontains=sendero.nombre_sendero
-        ).count()
+        # ===== HOJA 2: VISITANTES (LIMITADO) =====
+        ws_visitantes = wb.create_sheet(title="2. Visitantes")
         
-        # Estadísticas de comentarios
-        comentarios = Comentario.objects.filter(sendero=sendero)
-        total_comentarios = comentarios.count()
-        promedio_valoracion = comentarios.aggregate(
-            promedio=Avg('valoracion')
-        )['promedio'] or 0
+        headers_visitantes = ['ID', 'Nombre', 'Documento', 'Nacionalidad', 'Tipo', 'Género']
+        ws_visitantes.append(headers_visitantes)
+        aplicar_estilos_header_simple(ws_visitantes, headers_visitantes)
         
-        ws_senderos.append([
-            sendero.id,
-            sendero.nombre_sendero,
-            float(sendero.distancia),
-            sendero.dificultad,
-            total_visitas,
-            round(promedio_valoracion, 1) if promedio_valoracion else 'N/A',
-            total_comentarios
-        ])
-    
-    aplicar_bordes(ws_senderos, ws_senderos.max_row, len(headers_senderos))
-
-    # ===== HOJA 5: ENCUESTAS =====
-    ws_encuestas = wb.create_sheet(title="5. Encuestas")
-    
-    headers_encuestas = [
-        'ID', 'Fecha de la Encuesta', 'Nombre del Visitante', 
-        'Sendero Visitado', 'Respuestas del Formulario'
-    ]
-    ws_encuestas.append(headers_encuestas)
-    aplicar_estilos_header(ws_encuestas, headers_encuestas)
-    
-    for encuesta in Encuesta.objects.select_related('visita__visitante').order_by('-fecha_visita'):
-        # Convertir JSON a texto legible
-        formulario_texto = str(encuesta.formulario)
-        if len(formulario_texto) > 100:
-            formulario_texto = formulario_texto[:100] + '...'
-
-        fecha_formateada = formatear_fecha_hora(encuesta.fecha_visita)
-
-        ws_encuestas.append([
-            encuesta.id,
-            fecha_formateada,
-            encuesta.visita.visitante.nombre_visitante or 'N/A',
-            encuesta.visita.sendero_visitado or 'N/A',
-            formulario_texto
-        ])
-
-    
-    aplicar_bordes(ws_encuestas, ws_encuestas.max_row, len(headers_encuestas))
-
-    # ===== HOJA 6: ESTADÍSTICAS POR PAÍS =====
-    ws_paises = wb.create_sheet(title="6. Estadísticas por País")
-    
-    headers_paises = ['País/Nacionalidad', 'Total Visitantes', 'Total Visitas', 'Porcentaje del Total']
-    ws_paises.append(headers_paises)
-    aplicar_estilos_header(ws_paises, headers_paises)
-    
-    # Estadísticas por nacionalidad
-    stats_pais = Visitante.objects.values('nacionalidad').annotate(
-        total_visitantes=Count('id')
-    ).order_by('-total_visitantes')
-    
-    total_general = Visitante.objects.count()
-    
-    for stat in stats_pais:
-        # Contar visitas por país
-        visitantes_pais = Visitante.objects.filter(nacionalidad=stat['nacionalidad'])
-        total_visitas = RegistroVisita.objects.filter(visitante__in=visitantes_pais).count()
+        # Usar select_related y limit para optimizar
+        visitantes = Visitante.objects.all()[:MAX_ROWS_PER_SHEET]
         
-        porcentaje = (stat['total_visitantes'] / total_general * 100) if total_general > 0 else 0
+        for visitante in visitantes:
+            try:
+                ws_visitantes.append([
+                    visitante.id,
+                    (visitante.nombre_visitante or 'N/A')[:50],  # Truncar textos largos
+                    (visitante.cedula_pasaporte or 'N/A')[:20],
+                    (visitante.nacionalidad or 'N/A')[:30],
+                    (visitante.adulto_nino or 'N/A')[:10],
+                    (visitante.genero or 'N/A')[:10],
+                ])
+            except Exception:
+                continue  # Saltar registros problemáticos
+
+        # Limpiar memoria
+        del visitantes
+        gc.collect()
+
+        # ===== HOJA 3: VISITAS RECIENTES (LIMITADO) =====
+        ws_visitas = wb.create_sheet(title="3. Visitas")
         
-        ws_paises.append([
-            stat['nacionalidad'] or 'No especificado',
-            stat['total_visitantes'],
-            total_visitas,
-            f"{porcentaje:.1f}%"
-        ])
-    
-    aplicar_bordes(ws_paises, ws_paises.max_row, len(headers_paises))
+        headers_visitas = ['ID', 'Fecha', 'Visitante', 'Sendero', 'Razón']
+        ws_visitas.append(headers_visitas)
+        aplicar_estilos_header_simple(ws_visitas, headers_visitas)
+        
+        # Obtener solo las visitas más recientes para reducir carga
+        visitas = RegistroVisita.objects.select_related('visitante').order_by('-fecha_visita')[:MAX_ROWS_PER_SHEET]
+        
+        for visita in visitas:
+            try:
+                fecha_formateada = formatear_fecha(visita.fecha_visita)
+                visitante_nombre = 'N/A'
+                if visita.visitante:
+                    visitante_nombre = (visita.visitante.nombre_visitante or 'N/A')[:30]
 
-    # ===== HOJA 7: USUARIOS DEL SISTEMA =====
-    ws_usuarios = wb.create_sheet(title="7. Usuarios del Sistema")
-    
-    headers_usuarios = ['ID', 'Email', 'Nombre', 'Apellido', 'Rol', 'Total de Comentarios']
-    ws_usuarios.append(headers_usuarios)
-    aplicar_estilos_header(ws_usuarios, headers_usuarios)
-    
-    for usuario in Usuario.objects.all():
-        total_comentarios = Comentario.objects.filter(usuario=usuario).count()
-        ws_usuarios.append([
-            usuario.id,
-            usuario.email,
-            usuario.nombre or 'N/A',
-            usuario.apellido or 'N/A',
-            usuario.get_rol_display(),
-            total_comentarios
-        ])
-    
-    aplicar_bordes(ws_usuarios, ws_usuarios.max_row, len(headers_usuarios))
+                ws_visitas.append([
+                    visita.id,
+                    fecha_formateada,
+                    visitante_nombre,
+                    (visita.sendero_visitado or 'N/A')[:40],
+                    (visita.razon_visita or 'N/A')[:60],
+                ])
+            except Exception:
+                continue
 
-    # Generar archivo
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
+        del visitas
+        gc.collect()
+
+        # ===== HOJA 4: SENDEROS =====
+        ws_senderos = wb.create_sheet(title="4. Senderos")
+        
+        headers_senderos = ['ID', 'Nombre', 'Distancia', 'Dificultad', 'Visitas']
+        ws_senderos.append(headers_senderos)
+        aplicar_estilos_header_simple(ws_senderos, headers_senderos)
+        
+        senderos = Sendero.objects.all()
+        
+        for sendero in senderos:
+            try:
+                # Contar visitas de forma más eficiente
+                total_visitas = RegistroVisita.objects.filter(
+                    sendero_visitado__icontains=sendero.nombre_sendero
+                ).count()
+                
+                ws_senderos.append([
+                    sendero.id,
+                    sendero.nombre_sendero[:50],
+                    float(sendero.distancia) if sendero.distancia else 0,
+                    sendero.dificultad[:20],
+                    total_visitas
+                ])
+            except Exception:
+                continue
+
+        del senderos
+        gc.collect()
+
+        # ===== HOJA 5: ESTADÍSTICAS POR PAÍS =====
+        ws_paises = wb.create_sheet(title="5. Por País")
+        
+        headers_paises = ['País', 'Visitantes', 'Porcentaje']
+        ws_paises.append(headers_paises)
+        aplicar_estilos_header_simple(ws_paises, headers_paises)
+        
+        try:
+            # Consulta más eficiente
+            stats_pais = Visitante.objects.values('nacionalidad').annotate(
+                total=Count('id')
+            ).order_by('-total')[:50]  # Limitar a top 50 países
+            
+            total_general = Visitante.objects.count()
+            
+            for stat in stats_pais:
+                if total_general > 0:
+                    porcentaje = (stat['total'] / total_general * 100)
+                    ws_paises.append([
+                        (stat['nacionalidad'] or 'No especificado')[:30],
+                        stat['total'],
+                        f"{porcentaje:.1f}%"
+                    ])
+        except Exception:
+            ws_paises.append(['Error al cargar datos', '', ''])
+
+        # ===== HOJA 6: USUARIOS =====
+        ws_usuarios = wb.create_sheet(title="6. Usuarios")
+        
+        headers_usuarios = ['ID', 'Email', 'Nombre', 'Rol']
+        ws_usuarios.append(headers_usuarios)
+        aplicar_estilos_header_simple(ws_usuarios, headers_usuarios)
+        
+        usuarios = Usuario.objects.all()[:MAX_ROWS_PER_SHEET]
+        
+        for usuario in usuarios:
+            try:
+                ws_usuarios.append([
+                    usuario.id,
+                    (usuario.email or 'N/A')[:50],
+                    f"{usuario.nombre or ''} {usuario.apellido or ''}".strip()[:40] or 'N/A',
+                    usuario.get_rol_display()[:20] if hasattr(usuario, 'get_rol_display') else 'N/A'
+                ])
+            except Exception:
+                continue
+
+        del usuarios
+        gc.collect()
+
+        # Generar archivo de forma más eficiente
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Limpiar memoria
+        wb.close()
+        gc.collect()
+        
+        return output
+        
+    except Exception as e:
+        # Log del error para debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generando reporte Excel: {str(e)}", exc_info=True)
+        
+        # Crear un reporte simple de error
+        wb_error = openpyxl.Workbook()
+        ws_error = wb_error.active
+        ws_error.title = "Error"
+        ws_error['A1'] = f"Error: {str(e)[:100]}"
+        ws_error['A2'] = "Contacte al administrador"
+        
+        output_error = BytesIO()
+        wb_error.save(output_error)
+        output_error.seek(0)
+        wb_error.close()
+        
+        return output_error
+
+    finally:
+        # Cerrar conexiones de DB si es necesario
+        connection.close()

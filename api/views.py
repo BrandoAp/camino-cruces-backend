@@ -315,31 +315,51 @@ def visitantes_por_sendero(request):
 @api_view(['GET'])
 def reporte_excel(request):
     """
-    Genera y descarga el reporte completo en Excel.
+    Genera y descarga el reporte completo en Excel - OPTIMIZADO.
     """
+    import gc
+    
     try:
+        # Limpiar memoria antes de empezar
+        gc.collect()
+        
         # Generar el reporte
         excel_file = generar_reporte_completo()
         
-        # Crear nombre del archivo con fecha y hora
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"reporte_completo_centro_visitantes_{timestamp}.xlsx"
+        # Crear respuesta de manera más eficiente
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+        filename = f"reporte_{timestamp}.xlsx"
         
-        # Crear respuesta HTTP para descarga
+        # Obtener el contenido del archivo
+        file_content = excel_file.getvalue()
+        excel_file.close()  # Cerrar el BytesIO
+        
+        # Crear respuesta HTTP
         response = HttpResponse(
-            excel_file,
+            file_content,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = len(file_content)
+        
+        # Limpiar memoria
+        del file_content
+        gc.collect()
         
         return response
         
     except Exception as e:
-        # En caso de error, devolver JSON con el error
+        # Limpiar memoria en caso de error
+        gc.collect()
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error en vista reporte Excel: {str(e)}", exc_info=True)
+        
         return Response(
             {
-                "error": "Error al generar el reporte completo",
-                "detalle": str(e)
+                "error": "Error al generar el reporte",
+                "detalle": str(e)[:200]  # Limitar longitud del error
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
