@@ -3,7 +3,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
-from datetime import datetime, time
+from datetime import datetime, time, date
 from django.db.models import Count, Avg
 from ..models import (
     Visitante, Sendero, RegistroVisita, 
@@ -42,6 +42,24 @@ def generar_reporte_completo():
         for row in range(1, max_row + 1):
             for col in range(1, max_col + 1):
                 ws.cell(row=row, column=col).border = border
+
+    def formatear_fecha(fecha_obj):
+        """Formatea fecha de manera segura."""
+        if isinstance(fecha_obj, datetime):
+            return fecha_obj.strftime("%d/%m/%Y")
+        elif isinstance(fecha_obj, date):
+            return fecha_obj.strftime("%d/%m/%Y")
+        else:
+            return 'N/A'
+
+    def formatear_fecha_hora(fecha_obj):
+        """Formatea fecha con hora de manera segura."""
+        if isinstance(fecha_obj, datetime):
+            return fecha_obj.strftime("%d/%m/%Y %H:%M")
+        elif isinstance(fecha_obj, date):
+            return fecha_obj.strftime("%d/%m/%Y")
+        else:
+            return 'N/A'
 
     # Eliminar hoja por defecto
     wb.remove(wb.active)
@@ -118,11 +136,7 @@ def generar_reporte_completo():
     aplicar_estilos_header(ws_visitas, headers_visitas)
     
     for visita in RegistroVisita.objects.select_related('visitante').order_by('-fecha_visita'):
-        fecha_raw = visita.fecha_visita
-        if isinstance(fecha_raw, datetime):
-            fecha_formateada = fecha_raw.strftime("%d/%m/%Y")
-        else:
-            fecha_formateada = datetime.combine(fecha_raw, time.min).strftime("%d/%m/%Y")
+        fecha_formateada = formatear_fecha(visita.fecha_visita)
 
         ws_visitas.append([
             visita.id,
@@ -134,6 +148,7 @@ def generar_reporte_completo():
             (visita.razon_visita[:50] + '...') if len(visita.razon_visita or '') > 50 else (visita.razon_visita or 'N/A'),
             visita.visitante.adulto_nino or 'N/A'
         ])
+
     
     aplicar_bordes(ws_visitas, ws_visitas.max_row, len(headers_visitas))
 
@@ -188,12 +203,7 @@ def generar_reporte_completo():
         if len(formulario_texto) > 100:
             formulario_texto = formulario_texto[:100] + '...'
 
-        # Asegurar compatibilidad con datetime o date
-        fecha_raw = encuesta.fecha_visita
-        if isinstance(fecha_raw, datetime):
-            fecha_formateada = fecha_raw.strftime("%d/%m/%Y %H:%M")
-        else:
-            fecha_formateada = datetime.combine(fecha_raw, time.min).strftime("%d/%m/%Y %H:%M")
+        fecha_formateada = formatear_fecha_hora(encuesta.fecha_visita)
 
         ws_encuestas.append([
             encuesta.id,
@@ -202,6 +212,7 @@ def generar_reporte_completo():
             encuesta.visita.sendero_visitado or 'N/A',
             formulario_texto
         ])
+
     
     aplicar_bordes(ws_encuestas, ws_encuestas.max_row, len(headers_encuestas))
 
