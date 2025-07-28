@@ -3,7 +3,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, time
 from django.db.models import Count, Avg
 from ..models import (
     Visitante, Sendero, RegistroVisita, 
@@ -118,9 +118,15 @@ def generar_reporte_completo():
     aplicar_estilos_header(ws_visitas, headers_visitas)
     
     for visita in RegistroVisita.objects.select_related('visitante').order_by('-fecha_visita'):
+        fecha_raw = visita.fecha_visita
+        if isinstance(fecha_raw, datetime):
+            fecha_formateada = fecha_raw.strftime("%d/%m/%Y")
+        else:
+            fecha_formateada = datetime.combine(fecha_raw, time.min).strftime("%d/%m/%Y")
+
         ws_visitas.append([
             visita.id,
-            visita.fecha_visita.strftime("%d/%m/%Y"),
+            fecha_formateada,
             visita.hora_entrada.strftime("%H:%M") if visita.hora_entrada else 'N/A',
             visita.visitante.nombre_visitante or 'N/A',
             visita.visitante.nacionalidad or 'N/A',
