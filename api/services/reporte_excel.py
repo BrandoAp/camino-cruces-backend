@@ -263,7 +263,7 @@ def generar_reporte_completo():
                 fila = [
                     encuesta.id,
                     encuesta.visita.id if encuesta.visita else 'N/A',
-                    formatear_fecha(encuesta.fecha_visita)
+                    formatear_fecha(datetime.combine(encuesta.fecha_visita, time.min) if isinstance(encuesta.fecha_visita, date) else encuesta.fecha_visita)
                 ]
                 datos = encuesta.formulario or {}
                 for clave in claves_formulario:
