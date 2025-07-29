@@ -44,10 +44,10 @@ def generar_reporte_completo():
                 if isinstance(fecha_obj, datetime):
                     return fecha_obj.strftime("%d/%m/%Y")
                 elif isinstance(fecha_obj, date):
-                    return fecha_obj.strftime("%d/%m/%Y")
+                    return datetime.combine(fecha_obj, time.min).strftime("%d/%m/%Y")
                 else:
                     return str(fecha_obj)
-            except:
+            except Exception:
                 return 'N/A'
 
         def formatear_fecha_hora(fecha_obj):
@@ -263,7 +263,7 @@ def generar_reporte_completo():
                 fila = [
                     encuesta.id,
                     encuesta.visita.id if encuesta.visita else 'N/A',
-                    formatear_fecha(datetime.combine(encuesta.fecha_visita, time.min) if isinstance(encuesta.fecha_visita, date) else encuesta.fecha_visita)
+                    formatear_fecha(encuesta.fecha_visita)
                 ]
                 datos = encuesta.formulario or {}
                 for clave in claves_formulario:
