@@ -241,6 +241,41 @@ def generar_reporte_completo():
         del usuarios
         gc.collect()
 
+        # ===== HOJA 7: ENCUESTAS =====
+        ws_encuestas = wb.create_sheet(title="7. Encuestas")
+
+        # Claves estandarizadas que se esperan del formulario
+        claves_formulario = [
+            "sexo", "ocupacion", "estudios", "visita_realiza", "actividad_experimentada",
+            "planea_volver", "porque", "como_se_entero", "me_gusto", "no_me_gusto",
+            "recomendaria", "sugerencias"
+        ]
+
+        # Encabezados
+        headers_encuestas = ["ID Encuesta", "ID Visita", "Fecha Visita"] + claves_formulario
+        ws_encuestas.append(headers_encuestas)
+        aplicar_estilos_header_simple(ws_encuestas, headers_encuestas)
+
+        # Cargar encuestas (limitado por rendimiento)
+        encuestas = Encuesta.objects.select_related('visita').all()[:MAX_ROWS_PER_SHEET]
+        for encuesta in encuestas:
+            try:
+                fila = [
+                    encuesta.id,
+                    encuesta.visita.id if encuesta.visita else 'N/A',
+                    formatear_fecha(encuesta.fecha_visita)
+                ]
+                datos = encuesta.formulario or {}
+                for clave in claves_formulario:
+                    fila.append((datos.get(clave) or "N/A")[:100])  # Truncar si es largo
+                ws_encuestas.append(fila)
+            except Exception:
+                continue
+
+        del encuestas
+        gc.collect()
+
+
         # Generar archivo de forma más eficiente
         output = BytesIO()
         wb.save(output)
