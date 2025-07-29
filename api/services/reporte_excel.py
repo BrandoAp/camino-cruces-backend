@@ -241,7 +241,7 @@ def generar_reporte_completo():
         del usuarios
         gc.collect()
 
-        # ===== HOJA 7: ENCUESTAS =====
+        # ===== HOJA 7: ENCUESTAS (ALTERNATIVA SEGURA) =====
         ws_encuestas = wb.create_sheet(title="7. Encuestas")
 
         # Claves estandarizadas que se esperan del formulario
@@ -256,21 +256,55 @@ def generar_reporte_completo():
         ws_encuestas.append(headers_encuestas)
         aplicar_estilos_header_simple(ws_encuestas, headers_encuestas)
 
-        # Cargar encuestas (limitado por rendimiento)
-        encuestas = Encuesta.objects.select_related('visita').all()[:MAX_ROWS_PER_SHEET]
-        for encuesta in encuestas:
-            try:
-                fila = [
-                    encuesta.id,
-                    encuesta.visita.id if encuesta.visita else 'N/A',
-                    formatear_fecha(encuesta.fecha_visita)
-                ]
-                datos = encuesta.formulario or {}
-                for clave in claves_formulario:
-                    fila.append((datos.get(clave) or "N/A")[:100])  # Truncar si es largo
-                ws_encuestas.append(fila)
-            except Exception:
-                continue
+        try:
+            # ALTERNATIVA: Usar only() para campos específicos y manejar fechas manualmente
+            encuestas = Encuesta.objects.select_related('visita').only(
+                'id', 'formulario', 'visita__id'
+            ).order_by('-id')[:MAX_ROWS_PER_SHEET]
+            
+            for encuesta in encuestas:
+                try:
+                    # Obtener fecha usando SQL raw solo para este registro
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT DATE_FORMAT(fecha_visita, '%%d/%%m/%%Y') FROM api_encuesta WHERE id = %s",
+                            [encuesta.id]
+                        )
+                        fecha_result = cursor.fetchone()
+                        fecha_formateada = fecha_result[0] if fecha_result else 'N/A'
+                    
+                    fila = [
+                        encuesta.id,
+                        encuesta.visita.id if encuesta.visita else 'N/A',
+                        fecha_formateada
+                    ]
+                    
+                    # Manejar el campo formulario
+                    datos = encuesta.formulario or {}
+                    if isinstance(datos, str):
+                        try:
+                            import json
+                            datos = json.loads(datos)
+                        except:
+                            datos = {}
+                    
+                    for clave in claves_formulario:
+                        valor = datos.get(clave, "N/A")
+                        if isinstance(valor, str) and len(valor) > 100:
+                            valor = valor[:100] + "..."
+                        fila.append(str(valor))
+                    
+                    ws_encuestas.append(fila)
+                    
+                except Exception as e:
+                    print(f"Error procesando encuesta {encuesta.id}: {str(e)}")
+                    continue
+                    
+        except Exception as e:
+            print(f"Error cargando encuestas: {str(e)}")
+            ws_encuestas.append(['Error al cargar encuestas', str(e)[:50], 'N/A'] + ['N/A'] * len(claves_formulario))
+
 
         del encuestas
         gc.collect()
