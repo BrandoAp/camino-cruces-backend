@@ -1,1 +1,1 @@
-web: gunicorn parque_api.wsgi --bind 0.0.0.0:$PORT --timeout 600
+web: gunicorn --worker-tmp-dir /dev/shm parque_api.wsgi
