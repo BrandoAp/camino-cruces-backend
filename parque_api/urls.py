@@ -23,6 +23,7 @@ from django.http import JsonResponse
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),  # Asegúrate que api/urls.py existe
+    path("", include('prueba.urls')),
     path('', lambda request: JsonResponse({'status': 'ok'})),  # <- Ruta raíz
 ]
 
