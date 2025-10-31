@@ -6,238 +6,452 @@ from rest_framework.decorators import api_view
 from datetime import datetime
 from django.http import HttpResponse
 from .services.reporte_excel import generar_reporte_completo
+import traceback
 
 from .models import Visitante, RegistroVisita, Sendero
-from .serializers import (UsuarioSerializer, SenderoSerializer, SenderoFotoSerializer, VisitanteSerializer, ComentarioSerializer)
-from .services import usuario_service, sendero_service, foto_sendero_service, dashboard_service, comentario_service, valoracion_service, encuesta_service
+from .serializers import (
+    UsuarioSerializer,
+    SenderoSerializer,
+    SenderoFotoSerializer,
+    VisitanteSerializer,
+    ComentarioSerializer,
+)
+from .services import (
+    usuario_service,
+    sendero_service,
+    foto_sendero_service,
+    dashboard_service,
+    comentario_service,
+    valoracion_service,
+    encuesta_service,
+)
 
-    
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.report_github_issue import report_github_issue
+
+
 class VisitanteViewSet(viewsets.ModelViewSet):
     queryset = Visitante.objects.all()
     serializer_class = VisitanteSerializer
 
+
 # ==============================
 # Samir
 # ==============================
-@api_view(['POST'])
+@api_view(["POST"])
 def registro_usuario(request):
     """Crea un usuario nuevo."""
-    usuario = usuario_service.registrar_usuario(request.data)
-    serializer = UsuarioSerializer(usuario)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    try:
+        usuario = usuario_service.registrar_usuario(request.data)
+        serializer = UsuarioSerializer(usuario)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en registro_usuario: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/registro_usuario/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al registrar usuario", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def obtener_usuario(request, id):
     """Obtiene un usuario por ID."""
-    usuario = usuario_service.obtener_usuario(id)
-    serializer = UsuarioSerializer(usuario)
-    return Response(serializer.data)
+    try:
+        usuario = usuario_service.obtener_usuario(id)
+        serializer = UsuarioSerializer(usuario)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en obtener_usuario: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/usuario/{id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener usuario", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def mostrar_sendero(request, id):
     """Devuelve la información de un sendero."""
-    sendero = sendero_service.obtener_sendero(id)
-    serializer = SenderoSerializer(sendero)
-    return Response(serializer.data)
+    try:
+        sendero = sendero_service.obtener_sendero(id)
+        serializer = SenderoSerializer(sendero)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en mostrar_sendero: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/sendero/{id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener sendero", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def listar_senderos(request):
     """Devuelve todos los senderos."""
-    senderos = sendero_service.listar_todos_los_senderos()
-    serializer = SenderoSerializer(senderos, many=True)
-    return Response(serializer.data)
+    try:
+        senderos = sendero_service.listar_todos_los_senderos()
+        serializer = SenderoSerializer(senderos, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en listar_senderos: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/senderos/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al listar senderos", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def mostrar_foto_sendero(request, id):
     """Devuelve la foto de un sendero específico."""
-    foto = foto_sendero_service.obtener_foto_sendero(id)
-    serializer = SenderoFotoSerializer(foto)
-    return Response(serializer.data)
+    try:
+        foto = foto_sendero_service.obtener_foto_sendero(id)
+        serializer = SenderoFotoSerializer(foto)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en mostrar_foto_sendero: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/foto-sendero/{id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener foto de sendero", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def listar_fotos_senderos(request):
     """Devuelve todas las fotos de senderos."""
-    fotos = foto_sendero_service.obtener_todas_fotos_sendero()
-    serializer = SenderoFotoSerializer(fotos, many=True)
-    return Response(serializer.data)
+    try:
+        fotos = foto_sendero_service.obtener_todas_fotos_sendero()
+        serializer = SenderoFotoSerializer(fotos, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en listar_fotos_senderos: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/fotos-senderos/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al listar fotos de senderos", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def login_usuario(request):
-    email = request.data.get("email")
-    contraseña = request.data.get("contraseña")
+    try:
+        email = request.data.get("email")
+        contraseña = request.data.get("contraseña")
 
-    datos, error = usuario_service.autenticar_usuario(email, contraseña)
+        datos, error = usuario_service.autenticar_usuario(email, contraseña)
 
-    if error:
-        return Response({"detail": error}, status=status.HTTP_401_UNAUTHORIZED)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_401_UNAUTHORIZED)
 
-    return Response(datos, status=status.HTTP_200_OK)
+        return Response(datos, status=status.HTTP_200_OK)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en login_usuario: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/login/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al autenticar usuario", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def registrar_encuesta_view(request):
-    data = request.data
-    encuesta, error = encuesta_service.registrar_encuesta(data)
+    try:
+        data = request.data
+        encuesta, error = encuesta_service.registrar_encuesta(data)
 
-    if error:
-        return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+        if error:
+            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({'mensaje': 'Encuesta registrada correctamente'}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"mensaje": "Encuesta registrada correctamente"},
+            status=status.HTTP_201_CREATED,
+        )
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en registrar_encuesta_view: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/encuesta/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al registrar encuesta", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
-
-#endpoints de comentarios(Javier)
-@api_view(['POST'])
+# endpoints de comentarios(Javier)
+@api_view(["POST"])
 def agregar_comentario(request):
-    data = request.data.copy()
-    serializer = ComentarioSerializer(data=data)
-    serializer.is_valid(raise_exception=True)
-    comentario = serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    try:
+        data = request.data.copy()
+        serializer = ComentarioSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        comentario = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en agregar_comentario: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/comentario/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al agregar comentario", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def comentarios_por_sendero(request, sendero_id):
-    """ Devuelve todos los comentarios asociados a un sendero específico"""
-    comentarios = comentario_service.listar_comentarios_por_sendero(sendero_id)
-    serializer = ComentarioSerializer(comentarios, many=True)
-    return Response(serializer.data)
+    """Devuelve todos los comentarios asociados a un sendero específico"""
+    try:
+        comentarios = comentario_service.listar_comentarios_por_sendero(sendero_id)
+        serializer = ComentarioSerializer(comentarios, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en comentarios_por_sendero: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/comentarios/{sendero_id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener comentarios", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def valoracion_promedio(request, sendero_id):
     """Calcula y devuelve la valoración promedio de los comentarios de un sendero específico."""
-    promedio = valoracion_service.obtener_valoracion_promedio(sendero_id)
-    return Response({
-        "sendero_id": sendero_id,
-        "valoracion_promedio": promedio
-    })
+    try:
+        promedio = valoracion_service.obtener_valoracion_promedio(sendero_id)
+        return Response({"sendero_id": sendero_id, "valoracion_promedio": promedio})
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en valoracion_promedio: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/valoracion-promedio/{sendero_id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al calcular valoración promedio", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def valoraciones_por_sendero(request, sendero_id):
-    data = valoracion_service.obtener_valoraciones_por_sendero(sendero_id)
-    return Response(data)
+    try:
+        data = valoracion_service.obtener_valoraciones_por_sendero(sendero_id)
+        return Response(data)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en valoraciones_por_sendero: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/valoraciones/{sendero_id}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener valoraciones", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
 
 # ==============================
 # RELEZ
 # ==============================
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def obtener_visitante_por_cedula(request, cedula):
-    visitante = Visitante.objects.filter(cedula_pasaporte=cedula).first()
-    if visitante:
-        serializer = VisitanteSerializer(visitante)
-        return Response(serializer.data)
-    return Response({"detail": "Visitante no encontrado."}, status=404)
-
-
-@api_view(['POST'])
-def registrar_visita(request):
-    cedula = request.data.get("cedula_pasaporte")
-    sendero_nombre = request.data.get("sendero_visitado")
-    razon = request.data.get("razon_visita")
-
-    if not cedula or not sendero_nombre or not razon:
-        return Response({"detail": "Faltan datos requeridos."}, status=400)
-
-    visitante = Visitante.objects.filter(cedula_pasaporte=cedula).first()
-    if not visitante:
-        return Response({"detail": "Visitante no encontrado."}, status=404)
-
-    # ✅ Verificar que el sendero exista
-    sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
-    if not sendero:
-        return Response({"detail": "El sendero no existe."}, status=400)
-
-    # Ahora sí guardar
-    visita = RegistroVisita.objects.create(
-        visitante=visitante,
-        sendero_visitado=sendero.nombre_sendero,
-        razon_visita=razon
-    )
-
-    return Response({"mensaje": "Visita registrada correctamente."}, status=201)
-
-
-
-@api_view(['POST'])
-def registrar_visitante_y_visita(request):
-    data = request.data
-
-    campos_obligatorios = [
-        "cedula_pasaporte", "nombre_visitante", "nacionalidad", "adulto_nino",
-        "telefono", "genero", "sendero_visitado", "razon_visita"
-    ]
-
-    # Validar campos vacíos
-    for campo in campos_obligatorios:
-        if campo not in data or not data[campo]:
-            return Response({"detail": f"Campo '{campo}' es requerido."}, status=400)
-
-    # Verificar que el sendero exista
-    sendero_nombre = data["sendero_visitado"]
-    sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
-    if not sendero:
-        return Response({"detail": "El sendero no existe."}, status=400)
-
-    # Validar si ya existe el visitante
-    if Visitante.objects.filter(cedula_pasaporte=data["cedula_pasaporte"]).exists():
-        return Response({"detail": "El visitante ya está registrado."}, status=400)
-
-    # Crear visitante
-    visitante = Visitante.objects.create(
-        cedula_pasaporte=data["cedula_pasaporte"],
-        nombre_visitante=data["nombre_visitante"],
-        nacionalidad=data["nacionalidad"],
-        adulto_nino=data["adulto_nino"],
-        telefono=data["telefono"],
-        genero=data["genero"]
-    )
-
-    # Crear visita asociada
-    RegistroVisita.objects.create(
-        visitante=visitante,
-        sendero_visitado=sendero.nombre_sendero,
-        razon_visita=data["razon_visita"]
-    )
-
-    return Response({"mensaje": "Visitante y visita registrados correctamente."}, status=201)
-
-@api_view(['POST'])
-def registrar_visita_por_id(request):
-    visitante_id = request.data.get("visitante_id")
-    sendero_nombre = request.data.get("sendero_visitado")
-    razon = request.data.get("razon_visita")
-
-    if not visitante_id or not sendero_nombre or not razon:
-        return Response({"detail": "Faltan datos requeridos."}, status=400)
-
     try:
-        visitante = Visitante.objects.get(id=visitante_id)
-    except Visitante.DoesNotExist:
+        visitante = Visitante.objects.filter(cedula_pasaporte=cedula).first()
+        if visitante:
+            serializer = VisitanteSerializer(visitante)
+            return Response(serializer.data)
         return Response({"detail": "Visitante no encontrado."}, status=404)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en obtener_visitante_por_cedula: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/visitante/{cedula}/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al obtener visitante", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
-    sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
-    if not sendero:
-        return Response({"detail": "El sendero no existe."}, status=400)
 
-    RegistroVisita.objects.create(
-        visitante=visitante,
-        sendero_visitado=sendero.nombre_sendero,
-        razon_visita=razon
-    )
+@api_view(["POST"])
+def registrar_visita(request):
+    try:
+        cedula = request.data.get("cedula_pasaporte")
+        sendero_nombre = request.data.get("sendero_visitado")
+        razon = request.data.get("razon_visita")
 
-    return Response({"mensaje": "Visita registrada correctamente."}, status=201)
+        if not cedula or not sendero_nombre or not razon:
+            return Response({"detail": "Faltan datos requeridos."}, status=400)
+
+        visitante = Visitante.objects.filter(cedula_pasaporte=cedula).first()
+        if not visitante:
+            return Response({"detail": "Visitante no encontrado."}, status=404)
+
+        # ✅ Verificar que el sendero exista
+        sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
+        if not sendero:
+            return Response({"detail": "El sendero no existe."}, status=400)
+
+        # Ahora sí guardar
+        visita = RegistroVisita.objects.create(
+            visitante=visitante,
+            sendero_visitado=sendero.nombre_sendero,
+            razon_visita=razon,
+        )
+
+        return Response({"mensaje": "Visita registrada correctamente."}, status=201)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en registrar_visita: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/registrar-visita/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al registrar visita", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+def registrar_visitante_y_visita(request):
+    try:
+        data = request.data
+
+        campos_obligatorios = [
+            "cedula_pasaporte",
+            "nombre_visitante",
+            "nacionalidad",
+            "adulto_nino",
+            "telefono",
+            "genero",
+            "sendero_visitado",
+            "razon_visita",
+        ]
+
+        # Validar campos vacíos
+        for campo in campos_obligatorios:
+            if campo not in data or not data[campo]:
+                return Response(
+                    {"detail": f"Campo '{campo}' es requerido."}, status=400
+                )
+
+        # Verificar que el sendero exista
+        sendero_nombre = data["sendero_visitado"]
+        sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
+        if not sendero:
+            return Response({"detail": "El sendero no existe."}, status=400)
+
+        # Validar si ya existe el visitante
+        if Visitante.objects.filter(cedula_pasaporte=data["cedula_pasaporte"]).exists():
+            return Response({"detail": "El visitante ya está registrado."}, status=400)
+
+        # Crear visitante
+        visitante = Visitante.objects.create(
+            cedula_pasaporte=data["cedula_pasaporte"],
+            nombre_visitante=data["nombre_visitante"],
+            nacionalidad=data["nacionalidad"],
+            adulto_nino=data["adulto_nino"],
+            telefono=data["telefono"],
+            genero=data["genero"],
+        )
+
+        # Crear visita asociada
+        RegistroVisita.objects.create(
+            visitante=visitante,
+            sendero_visitado=sendero.nombre_sendero,
+            razon_visita=data["razon_visita"],
+        )
+
+        return Response(
+            {"mensaje": "Visitante y visita registrados correctamente."}, status=201
+        )
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en registrar_visitante_y_visita: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/registrar-visitante-visita/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al registrar visitante y visita", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+def registrar_visita_por_id(request):
+    try:
+        visitante_id = request.data.get("visitante_id")
+        sendero_nombre = request.data.get("sendero_visitado")
+        razon = request.data.get("razon_visita")
+
+        if not visitante_id or not sendero_nombre or not razon:
+            return Response({"detail": "Faltan datos requeridos."}, status=400)
+
+        try:
+            visitante = Visitante.objects.get(id=visitante_id)
+        except Visitante.DoesNotExist:
+            return Response({"detail": "Visitante no encontrado."}, status=404)
+
+        sendero = Sendero.objects.filter(nombre_sendero=sendero_nombre).first()
+        if not sendero:
+            return Response({"detail": "El sendero no existe."}, status=400)
+
+        RegistroVisita.objects.create(
+            visitante=visitante,
+            sendero_visitado=sendero.nombre_sendero,
+            razon_visita=razon,
+        )
+
+        return Response({"mensaje": "Visita registrada correctamente."}, status=201)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en registrar_visita_por_id: {str(e)[:50]}",
+            body=f"**Endpoint:** POST /api/registrar-visita-por-id/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+        return Response(
+            {"detail": "Error al registrar visita por ID", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 # ==============================
 # Dashboard Endpoints
 # ==============================
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def visitas_recientes(request):
     """
     Obtiene las visitas recientes con toda la información necesaria.
@@ -247,13 +461,18 @@ def visitas_recientes(request):
         visitas = dashboard_service.obtener_visitas_recientes()
         return Response(visitas, status=status.HTTP_200_OK)
     except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en visitas_recientes: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/visitas-recientes/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
         return Response(
             {"error": "Error al obtener visitas recientes", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def visitantes_hoy(request):
     """
     Retorna el conteo de visitantes de hoy.
@@ -262,13 +481,18 @@ def visitantes_hoy(request):
         count = dashboard_service.contar_visitantes_hoy()
         return Response({"visitantes_hoy": count}, status=status.HTTP_200_OK)
     except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en visitantes_hoy: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/visitantes-hoy/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
         return Response(
             {"error": "Error al contar visitantes de hoy", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def encuestas_hoy(request):
     """
     Retorna el conteo de encuestas llenadas hoy.
@@ -277,13 +501,18 @@ def encuestas_hoy(request):
         count = dashboard_service.contar_encuestas_hoy()
         return Response({"encuestas_hoy": count}, status=status.HTTP_200_OK)
     except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en encuestas_hoy: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/encuestas-hoy/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
         return Response(
             {"error": "Error al contar encuestas de hoy", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def visitantes_por_pais(request):
     """
     Retorna el conteo de visitantes agrupados por país/nacionalidad.
@@ -292,13 +521,18 @@ def visitantes_por_pais(request):
         datos = dashboard_service.obtener_visitantes_por_pais()
         return Response(datos, status=status.HTTP_200_OK)
     except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en visitantes_por_pais: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/visitantes-por-pais/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
         return Response(
             {"error": "Error al obtener visitantes por país", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def visitantes_por_sendero(request):
     """
     Retorna el conteo de visitantes agrupados por sendero.
@@ -307,59 +541,72 @@ def visitantes_por_sendero(request):
         datos = dashboard_service.obtener_visitantes_por_sendero()
         return Response(datos, status=status.HTTP_200_OK)
     except Exception as e:
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en visitantes_por_sendero: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/visitantes-por-sendero/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
         return Response(
             {"error": "Error al obtener visitantes por sendero", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def reporte_excel(request):
     """
     Genera y descarga el reporte completo en Excel - OPTIMIZADO.
     """
     import gc
-    
+
     try:
         # Limpiar memoria antes de empezar
         gc.collect()
-        
+
         # Generar el reporte
         excel_file = generar_reporte_completo()
-        
+
         # Crear respuesta de manera más eficiente
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         filename = f"reporte_{timestamp}.xlsx"
-        
+
         # Obtener el contenido del archivo
         file_content = excel_file.getvalue()
         excel_file.close()  # Cerrar el BytesIO
-        
+
         # Crear respuesta HTTP
         response = HttpResponse(
             file_content,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        response['Content-Length'] = len(file_content)
-        
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Length"] = len(file_content)
+
         # Limpiar memoria
         del file_content
         gc.collect()
-        
+
         return response
-        
+
     except Exception as e:
         # Limpiar memoria en caso de error
         gc.collect()
-        
+
+        error_trace = traceback.format_exc()
+        report_github_issue(
+            title=f"Error en reporte_excel: {str(e)[:50]}",
+            body=f"**Endpoint:** GET /api/reporte-excel/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
+        )
+
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"Error en vista reporte Excel: {str(e)}", exc_info=True)
-        
+
         return Response(
             {
                 "error": "Error al generar el reporte",
-                "detalle": str(e)[:200]  # Limitar longitud del error
+                "detalle": str(e)[:200],  # Limitar longitud del error
             },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
