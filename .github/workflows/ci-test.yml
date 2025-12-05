@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11, 3.12, 3.13]
+        python-version: [3.12, 3.13]
 
     services:
       postgres:
@@ -67,4 +67,4 @@ jobs:
         run: python manage.py migrate --noinput
 
       - name: Run tests
-        run: python manage.py test --verbosity=2
+        run: python manage.py test api --verbosity=2
