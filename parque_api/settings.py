@@ -86,6 +86,10 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST", default="localhost"),
         "PORT": config("DB_PORT", default="3306"),
+        "TEST": {
+            "MIRROR": "default",
+        },
+        "CONN_MAX_AGE": 0,
     }
 }
 
@@ -148,4 +152,3 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
-
