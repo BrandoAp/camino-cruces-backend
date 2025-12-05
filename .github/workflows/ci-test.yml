@@ -28,18 +28,17 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
-        
-        
 
     env:
-        DB_NAME: postgres
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_HOST: 127.0.0.1
-        DB_PORT: 5432
+      CLAVE_ENCRIPTACION: gKMpVv1lYf9Yx3mCkF2Z3tZ3a9zQ9W8uG8zFye1T9V0= #solo para CI
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
 
-        DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
-        PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
     steps:
       - name: Checkout repository
@@ -74,7 +73,7 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
         env:
-            SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Run tests
         run: python manage.py test api --verbosity=2
