@@ -30,6 +30,7 @@ jobs:
           --health-retries=5
 
     env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
       CLAVE_ENCRIPTACION: gKMpVv1lYf9Yx3mCkF2Z3tZ3a9zQ9W8uG8zFye1T9V0= #solo para CI
       DB_NAME: postgres
       DB_USER: postgres
@@ -72,8 +73,6 @@ jobs:
 
       - name: Run migrations
         run: python manage.py migrate --noinput
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Run tests
         run: python manage.py test api --verbosity=2
