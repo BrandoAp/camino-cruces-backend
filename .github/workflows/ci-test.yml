@@ -74,5 +74,24 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests
-        run: python manage.py test api --verbosity=2
+      - name: Correr Tests con Coverage
+        run: |
+          # Instalar coverage (por seguridad, aunque esté en requirements)
+          pip install coverage
+          
+          # Ejecutar los tests vigilados por coverage
+          coverage run --source='.' manage.py test
+          
+          # Mostrar el reporte en el log de GitHub (esto es lo que capturarás para el daily)
+          coverage report
+
+          # Generar el reporte HTML (para descargar)
+          coverage html
+
+      - name: Subir Reporte de Coverage
+        uses: actions/upload-artifact@v4
+        if: always()  # Se ejecuta aunque fallen los tests
+        with:
+          name: reporte-cobertura
+          path: htmlcov/
+          retention-days: 5

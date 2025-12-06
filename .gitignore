@@ -40,3 +40,6 @@ ENV/
 Thumbs.db
 
 
+
+.gemini/
+gha-creds-*.json
