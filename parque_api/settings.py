@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "api",  # app aquí
-    "prueba",
     "rest_framework",  # Django REST Framework
     "rest_framework_simplejwt",
 ]

@@ -1,13 +1,16 @@
+import logging
+import sys
+import os
+import gc
+import traceback
+from utils.report_github_issue import report_github_issue
 from rest_framework import viewsets
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from datetime import datetime
 from django.http import HttpResponse
 from .services.reporte_excel import generar_reporte_completo
-import traceback
-
 from .models import Visitante, RegistroVisita, Sendero
 from .serializers import (
     UsuarioSerializer,
@@ -26,11 +29,8 @@ from .services import (
     encuesta_service,
 )
 
-import sys
-import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils.report_github_issue import report_github_issue
 
 
 class VisitanteViewSet(viewsets.ModelViewSet):
@@ -557,7 +557,6 @@ def reporte_excel(request):
     """
     Genera y descarga el reporte completo en Excel - OPTIMIZADO.
     """
-    import gc
 
     try:
         # Limpiar memoria antes de empezar
@@ -597,8 +596,6 @@ def reporte_excel(request):
             title=f"Error en reporte_excel: {str(e)[:50]}",
             body=f"**Endpoint:** GET /api/reporte-excel/\n**Error:** {str(e)}\n**Traceback:**\n```\n{error_trace}\n```",
         )
-
-        import logging
 
         logger = logging.getLogger(__name__)
         logger.error(f"Error en vista reporte Excel: {str(e)}", exc_info=True)
